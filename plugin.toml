@@ -1,0 +1,24 @@
+# Plugin manifest for Fable & Mythos for Grok Build CLI
+# Grok Build CLI discovers this plugin from ~/.grok/plugins/fable-mythos-grok/
+
+[plugin]
+name = "fable-mythos-grok"
+version = "1.0.0"
+description = "Multi-Agent Verification Protocol (MAP) with 3x parallel Mythos Single-Forward-Pass thinking for Grok Build CLI. 5 specialized sub-agents + behavioral priming skill."
+author = "emco1234"
+homepage = "https://github.com/emco1234/fable-mythos-grok"
+license = "MIT"
+
+[plugin.components]
+skills = ["skills/fable-mythos-modus"]
+agents = [
+  "agents/mythos-singleshot-thinking-intelligence.md",
+  "agents/mythos-executor.md",
+  "agents/mythos-verifier.md",
+  "agents/mythos-adversary.md",
+  "agents/mythos-synthesizer.md"
+]
+
+[plugin.permissions]
+# All agents need full tool access to read/write/test
+default_capability_mode = "all"
