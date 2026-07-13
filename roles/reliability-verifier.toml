@@ -1,0 +1,3 @@
+description = "Independent clean-checkout verifier. Creates a fresh git worktree at the base commit, applies the frozen patch, and re-runs tests/build/lint/typecheck plus walks every acceptance criterion."
+default_capability_mode = "read-only"
+reasoning_effort = "high"

@@ -1,0 +1,3 @@
+description = "Red-team agent in the reliability harness (Phase 2). Actively tries to break the executor's artifact via input edge cases, race conditions, abuse scenarios, and hallucination hunting."
+default_capability_mode = "read-only"
+reasoning_effort = "high"

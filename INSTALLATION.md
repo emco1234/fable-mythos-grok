@@ -65,9 +65,58 @@ mkdir -p ~/.grok/agents
 cp agents/*.md ~/.grok/agents/
 ```
 
+> **Note — plugin-bundled vs. loose `.md` files:** When this framework is installed via Option A (Plugin install), Grok Build CLI does **not** discover the agents from loose files in `~/.grok/agents/`. Instead the agents are bundled by the plugin — `plugin.toml` lists every component under `[plugin.components]` (`skills`, `agents`, `roles`). Option B (manual install) puts the `.md` files into `~/.grok/agents/` directly and bypasses the plugin manifest.
+
 **No manual agent creation needed.** Grok Build CLI **auto-discovers** every `.md` file in `~/.grok/agents/` from its frontmatter (`name`, `description`, `prompt_mode`, `model`, `permission_mode`, `agents_md`). You do **not** need to create agents by hand in the TUI, and there is **no** `agent` block to register in any config file — the copy command above is the entire install. If a guide (older or third-party) tells you to create the 5 / 11 agents manually through the Grok UI, that is outdated: filesystem drop-in is the supported path.
 
 Each agent file declares its capabilities in frontmatter via the **`permission_mode`** field, which names a Grok-managed mode. Grok Build CLI controls tool access through these named modes — **not** through a per-agent tool list. There is **no** `tools:` array in the frontmatter and **no** blanket `default_capability_mode = "all"`. See the permission matrix in [`AGENTS.md`](./AGENTS.md).
+
+#### Each agent needs THREE components — not one
+
+A TUI-visible custom agent in Grok Build CLI is composed of **three** parts. Only the combination makes the agent selectable in the TUI subagent picker:
+
+| Component | Path | Purpose |
+|---|---|---|
+| **Behavior** | `agents/<name>.md` | System prompt, frontmatter (`name`, `description`, `permission_mode`, ...). Defines *what the agent does*. |
+| **Capability envelope** | `roles/<name>.toml` | `description`, `default_capability_mode`, `reasoning_effort`. **This is what makes the agent show up as a selectable subagent in the Grok TUI picker.** Without it, Grok discovers the agent but does not register it as a picker entry. |
+| **Persona** (optional) | `personas/<name>.toml` | Optional persona styling. |
+
+This mirrors the layout of Grok's built-in agents under `~/.grok/bundled/` (each built-in has `agents/<name>.md` + `roles/<name>.toml`, optionally `personas/<name>.toml`). The plugin manifest declares all matching pairs:
+
+```toml
+[plugin.components]
+agents = [ "agents/mythos-executor.md", ... ]
+roles  = [ "roles/mythos-executor.toml", ... ]   # required for TUI visibility
+```
+
+##### Fields inside `roles/<name>.toml`
+
+| Key | Allowed values | Meaning |
+|---|---|---|
+| `description` | one-line string | Human-readable description shown in the picker. |
+| `default_capability_mode` | `"read-only"` \| `"full"` | Capability envelope. `"read-only"` = read/grep/glob only; `"full"` = read + edit + write + bash. |
+| `reasoning_effort` | `"low"` \| `"medium"` \| `"high"` | Amount of reasoning the agent spends per turn. |
+
+This plugin pins **all 11 roles** to `reasoning_effort = "high"` and uses `default_capability_mode` to express least-privilege: 8 agents are `read-only`, 3 (`mythos-executor`, `reliability-lead`, `reliability-test-designer`) are `full`.
+
+##### Verify the roles are picked up
+
+After `/plugins reload`, run:
+
+```bash
+grok inspect fable-mythos-grok
+```
+
+The output should list 11 agents **and** 11 matching roles. If `roles` is empty or mismatched, the agents will be discovered but will not appear in the TUI subagent picker — that is the canonical symptom of a missing `roles/<name>.toml`.
+
+Also confirm the plugin is enabled in `~/.grok/config.toml`:
+
+```toml
+[plugins]
+enabled = ["fable-mythos-grok", ...]
+```
+
+In most setups the auto-scan of `~/.grok/plugins/` discovers the plugin and adds the entry itself, but if `grok inspect` reports the plugin as disabled, add the name explicitly and reload.
 
 #### How `permission_mode` maps to least-privilege intent
 
@@ -186,6 +235,14 @@ An edit is **trivial** when it is logically obvious and touches no behavior, log
 - Check frontmatter: each file must have `name`, `description`, `prompt_mode`, `model`, `permission_mode`, `agents_md`. Tool access is governed by `permission_mode` (a Grok named mode such as `plan` or `default`), **not** by a `tools` array — a `tools:` key in the frontmatter is not a Grok-supported field and should be removed.
 - Subagents must be enabled (they are by default). Check `~/.grok/config.toml` for `[subagents] enabled = false`
 - Do NOT expect an `agent` block in the global config with N entries — agent files in `~/.grok/agents/` are auto-discovered.
+
+### Agents missing from the TUI subagent picker (plugin install)
+This is the canonical symptom of a **missing `roles/<name>.toml`**. Grok discovers the agent from `agents/<name>.md` but does **not** register it as a selectable subagent in the picker unless a matching `roles/<name>.toml` capability envelope exists.
+- Verify all 11 role files exist: `ls roles/*.toml | wc -l` should print `11`.
+- Verify `plugin.toml` has a `roles = [...]` array under `[plugin.components]` listing all 11 role files, in the same order as `agents`.
+- Verify the plugin is enabled in `~/.grok/config.toml`: `[plugins] enabled = [...]` must contain `fable-mythos-grok`. Auto-scan of `~/.grok/plugins/` usually adds this, but if `grok inspect` reports the plugin as disabled, add the name explicitly.
+- Run `grok inspect fable-mythos-grok` — it should list 11 agents **and** 11 matching roles. Mismatched or empty `roles` is the bug.
+- After fixing, run `/plugins reload` in the TUI.
 
 ### Pipeline fires too aggressively (cost concerns)
 - Tighten the trivial-override threshold in `~/.grok/AGENTS.md` (see "Trivial-Override" above).
