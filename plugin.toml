@@ -1,10 +1,31 @@
 # Plugin manifest for Fable & Mythos for Grok Build CLI
 # Grok Build CLI discovers this plugin from ~/.grok/plugins/fable-mythos-grok/
+#
+# Least-privilege policy (P0.3):
+#   There is NO `default_capability_mode = "all"`. Each agent declares its own
+#   capabilities via frontmatter (`tools` / `permission_mode`) in its agent file.
+#   The matrix below documents the intended permission envelope per agent.
+#   If Grok Build CLI gains TOML-level per-agent capability keys in the future,
+#   this table should be mirrored into structured TOML.
+#
+#   Agent                                  | read | edit | write | bash | grep/glob
+#   ---------------------------------------|------|------|-------|------|----------
+#   mythos-singleshot-thinking-intelligence| yes  | no   | no    | no   | yes
+#   mythos-executor                        | yes  | yes  | yes   | yes  | yes
+#   mythos-verifier                        | yes  | no   | no    | yes  | yes
+#   mythos-adversary                       | yes  | no   | no    | yes  | yes
+#   mythos-synthesizer                     | yes  | no   | no    | no   | yes
+#   reliability-scout                      | yes  | no   | no    | no   | yes
+#   reliability-spec-critic                | yes  | no   | no    | no   | yes
+#   reliability-test-designer              | yes  | no   | no    | yes  | yes
+#   reliability-lead                       | yes  | yes  | yes   | yes  | yes
+#   reliability-verifier                   | yes  | no   | no    | yes  | yes
+#   reliability-adversary                  | yes  | no   | no    | yes  | yes
 
 [plugin]
 name = "fable-mythos-grok"
-version = "1.0.0"
-description = "Multi-Agent Verification Protocol (MAP) with 3x parallel Mythos Single-Forward-Pass thinking for Grok Build CLI. 5 specialized sub-agents + behavioral priming skill."
+version = "2.0.0"
+description = "Reliability harness for Grok Build CLI: multi-agent verification protocol with least-privilege per-agent capabilities, task contracts, clean-checkout verification, and a deterministic done-gate."
 author = "emco1234"
 homepage = "https://github.com/emco1234/fable-mythos-grok"
 license = "MIT"
@@ -16,9 +37,17 @@ agents = [
   "agents/mythos-executor.md",
   "agents/mythos-verifier.md",
   "agents/mythos-adversary.md",
-  "agents/mythos-synthesizer.md"
+  "agents/mythos-synthesizer.md",
+  "agents/reliability-scout.md",
+  "agents/reliability-spec-critic.md",
+  "agents/reliability-test-designer.md",
+  "agents/reliability-lead.md",
+  "agents/reliability-verifier.md",
+  "agents/reliability-adversary.md"
 ]
 
 [plugin.permissions]
-# All agents need full tool access to read/write/test
-default_capability_mode = "all"
+# No default_capability_mode = "all" (removed in v2.0.0, P0.3).
+# Capabilities are declared per-agent in each agent file's frontmatter.
+# Verifier, adversary, synthesizer, and all read-only scouts must NOT
+# receive blanket edit/write on the main worktree.

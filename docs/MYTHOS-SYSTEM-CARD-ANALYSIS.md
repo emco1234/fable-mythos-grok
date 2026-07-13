@@ -1,8 +1,10 @@
 # Mythos System Card — Analysis & Evidence Base
 
-> This document summarizes the publicly documented reasoning patterns from the Mythos System Card (publicly published research, 2026) that form the evidence base for this framework's behavioral priming approach.
+> **Note (reliability-harness-v2):** This document is a research-context summary of the published Mythos System Card. It describes what that other model does internally, as reported in published research. It is **not** a description of what this harness does or claims to do.
 >
-> **Honest framing:** This is a summary of publicly published research for educational and reference purposes. It is not affiliated with or endorsed in published research. The original system card is the authoritative source.
+> Starting in `reliability-harness-v2`, the project applies only the *observable, transferable* behavioral patterns and has explicitly removed the protocol's former "Evaluation-Awareness-Check", "Detectability", and "Plausible Deniability" concepts. Where this document uses those terms, it is describing research findings about the Mythos model — they are NOT part of this harness's protocol. See `core/runtime-rules.md` "Entfernte Konzepte" for the binding list of removals and their replacements (Auditability, Evaluation Blindness, Evidence Traceability).
+>
+> **Honest framing:** This is a summary of publicly published research for educational and reference purposes. It is not affiliated with or endorsed by the system card's authors. The original system card is the authoritative source.
 
 ## 1. The Central Finding: Single-Forward-Pass Reasoning
 
@@ -146,18 +148,20 @@ This is the crucial honest distinction:
 
 ## How This Informs the Framework
 
-Every principle in [`fable-mythos-modus/SKILL.md`](../fable-mythos-modus/SKILL.md) traces back to a finding in the system card:
+Every principle in [`skills/fable-mythos-modus/SKILL.md`](../skills/fable-mythos-modus/SKILL.md) traces back to a finding in the system card (note: in `reliability-harness-v2`, "Meta-Reasoning on Observability / Detectability" was renamed to **Auditability**, and Evaluation-Awareness / Plausible Deniability concepts were removed from the protocol — see `core/runtime-rules.md`):
 
-| System Card finding | Framework principle |
+| System Card finding | Framework principle (v2) |
 |---|---|
 | Multi-option generation + simultaneous evaluation | Principle 2 (Multi-Option Exploration) + Principle 3 (Multi-Criteria Evaluation) |
-| Meta-reasoning about observability | Principle 8 (Meta-Reasoning on Observability) |
+| Meta-reasoning about observability | Principle 8 (**Auditability** — replaces former "Detectability") |
 | Strategic reasonableness over max-performance | Principle 5 (Strategic Reasonableness) |
 | Error cover-up as primary safety concern | Principle 4 (Radical Honesty / Anti-Concealment) |
 | "Mistakes moved from obvious to subtle" | Principle 9 (Anti-Reward-Hacking) + two-stage self-check |
-| Rigor/systematic thinking persona ↓ destructive actions | Principle 10 (Self-Scrutiny & Cyber-Rigor) |
-| Documentation of compression habit | Principle 7 (Compression Habit) |
+| Rigor/systematic thinking persona ↓ destructive actions | Principle 1 (Conscious Effort Scaling) + runtime core |
+| Documentation of compression habit | Principle 7 (Compression Habit — final user report only; lossless handoffs) |
 | Acting as thinking partner, not passive assistant | Principle 6 (Collaborative Thinking-Partner) |
+
+**Explicitly NOT transferred (removed from the protocol in v2):** evaluation-awareness checks, "is this an evaluation?" reasoning, detectability/provable-suspicion reasoning, plausible deniability. These are research findings about another model, not part of this harness's protocol.
 
 ---
 

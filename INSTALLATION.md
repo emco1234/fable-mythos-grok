@@ -1,6 +1,6 @@
-# Installation Guide — Fable & Mythos for Grok Build CLI
+# Installation Guide — Reliability Harness for Grok Build CLI
 
-Complete walkthrough to install the MAP protocol plugin in Grok Build CLI.
+Complete walkthrough to install the reliability-harness plugin in Grok Build CLI.
 
 ## Prerequisites
 
@@ -54,24 +54,56 @@ Expected:
 ```
 ---
 name: fable-mythos-modus
-description: Maximum-Capability Modus. Emuliert Mythos...
+description: Reliability-first operating mode...
 ---
 ```
 
-### Step 2 — Install the 5 Sub-Agents
+### Step 2 — Install the Sub-Agents
 
 ```bash
 mkdir -p ~/.grok/agents
 cp agents/*.md ~/.grok/agents/
 ```
 
-### Step 3 — Install the Global Rules
+Each agent file declares its own capabilities in frontmatter (`tools` / `permission_mode`). There is **no** blanket `default_capability_mode = "all"` — least privilege is enforced per-agent. See the permission matrix in [`AGENTS.md`](./AGENTS.md).
+
+### Step 3 — Install the Global Rules (idempotent)
+
+**Do not blindly append to `AGENTS.md`** — repeated runs would duplicate rules and grow context unboundedly. Instead, the install uses a managed block delimited by HTML comment markers:
 
 ```bash
-cp AGENTS.md ~/.grok/AGENTS.md
+# Idempotent merge — replaces only the managed block, leaves the rest of
+# the user's AGENTS.md untouched.
+python3 - <<'PY'
+from pathlib import Path
+import re
+
+src = Path("AGENTS.md").read_text(encoding="utf-8")
+dst_path = Path.home() / ".grok" / "AGENTS.md"
+dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+START = "<!-- reliability-harness:start -->"
+END = "<!-- reliability-harness:end -->"
+block = f"{START}\n{src}\n{END}\n"
+
+existing = dst_path.read_text(encoding="utf-8") if dst_path.exists() else ""
+pattern = re.compile(re.escape(START) + r".*?" + re.escape(END) + r"\n?", re.DOTALL)
+
+if pattern.search(existing):
+    new = pattern.sub(lambda m: block, existing)
+else:
+    sep = "\n\n" if existing and not existing.endswith("\n\n") else ""
+    new = existing + sep + block
+
+dst_path.write_text(new, encoding="utf-8")
+print(f"Merged {len(src)} bytes into {dst_path} (managed block).")
+PY
 ```
 
-This makes the MAP protocol fire globally across all your Grok sessions.
+Why a managed block?
+- Running install twice produces the same file content (idempotent).
+- Uninstall is a single regex removal of the block.
+- The rest of the user's `AGENTS.md` is never touched.
 
 ### Step 4 — Restart Grok Build CLI
 
@@ -82,30 +114,46 @@ Fully quit Grok and restart. Skills, agents, and rules are indexed at startup.
 ### Check skills are loaded
 In the Grok TUI, the skill `fable-mythos-modus` should be available. Test by asking:
 ```
-List the 10 Mythos principles.
+Summarize the runtime core and the done-gate.
 ```
 
-The agent should respond with all 10 principles from the skill.
+The agent should respond with the 14-point runtime core and the done-gate conditions.
 
 ### Check agents are available
-The 5 sub-agents (`mythos-singleshot-thinking-intelligence`, `mythos-executor`, `mythos-verifier`, `mythos-adversary`, `mythos-synthesizer`) should be invokable via the `task` tool.
+The sub-agents should be invokable via the `task` tool. The 5 core agents are `mythos-singleshot-thinking-intelligence`, `mythos-executor`, `mythos-verifier`, `mythos-adversary`, `mythos-synthesizer`. The 6 optional orthogonal agents are `reliability-scout`, `reliability-spec-critic`, `reliability-test-designer`, `reliability-lead`, `reliability-verifier`, `reliability-adversary`.
 
-### Check MAP fires
-Give a genuinely non-trivial coding task:
-```
-Refactor this function to handle three new edge cases and explain the trade-offs.
-```
+## How the Protocol Fires After Installation
 
-You should observe the MAP protocol engaging — multiple agents working in sequence, ending with a confidence-rated delivery.
+| Task type | Behavior | Invocations |
+|---|---|---|
+| Coding task with substance | Full pipeline (Phase 0–3) | ≥7 invocations |
+| Trivial edit | Skipped (main agent only) | 1 |
+| Pure info / read-only questions | Skipped | 1 |
+| Ambiguous ("trivial or not?") | Pipeline fires | ≥7 |
 
-## How MAP Fires After Installation
+### Honest overhead (read this before installing)
 
-| Task type | MAP behavior |
-|---|---|
-| Coding task with substance | ✅ Full MAP: Phase 0 (3× thinking) → Phase 1 (executor) → Phase 2 (verifier+adversary) → Phase 3 (synthesizer) |
-| Trivial edit | ⏭️ MAP skipped |
-| Pure info questions | ⏭️ MAP skipped |
-| Ambiguous | ✅ MAP fires |
+- Minimum per non-trivial task: **7 sub-agent invocations** (3 thinking + executor + verifier + adversary + synthesizer). The earlier "roughly 4x overhead" wording was incorrect and is withdrawn.
+- Each repair round adds roughly **4 invocations** (executor rework + verifier + adversary + synthesizer).
+- Maximum **3 repair loops**, then escalate to the user. Worst case per task: ~19 invocations.
+- Tokens and latency scale accordingly.
+
+### Recommended: dynamic routing (not full fleet on every task)
+
+To avoid firing the full fleet on small tasks, route by complexity/risk:
+
+| Tier | Trigger | Agents engaged | Approx. invocations |
+|---|---|---|---|
+| `trivial` | Typo / 1-line / value change / comment | Main agent only | 1 |
+| `normal` | Standard bugfix, small refactor | Main agent + verifier | 2 |
+| `complex` | Multi-file refactor, schema/API change, deep bug | 2 read-only scouts (parallel) → lead → verifier | 4 |
+| `critical` | Security-sensitive, concurrency, data-loss risk | complex + adversary | 5 |
+
+The full 7-agent pipeline is reserved for the `critical` tier or for tasks the router classifies as genuinely ambiguous. This is the same routing table that appears in [`core/routing.md`](./core/routing.md) and in `AGENTS.md`.
+
+### Trivial-Override (clear definition)
+
+An edit is **trivial** when it is logically obvious and touches no behavior, logic, or architecture branch. Examples: typo fix, 1-line fix, pure value change, comment addition, import addition, simple CSS color tweak. At the threshold of doubt ("trivial or not?") → the pipeline fires.
 
 ## Troubleshooting
 
@@ -120,12 +168,17 @@ You should observe the MAP protocol engaging — multiple agents working in sequ
 - Grok also checks other skill directories — if you have the ZCode version installed there, it may conflict. Either remove it or rely on Grok's deduplication (higher-priority location wins)
 
 ### Sub-agents not invokable
-- Verify all 5 `.md` files are in `~/.grok/agents/`
-- Check frontmatter: each file must have `name`, `description`, `prompt_mode`, `model`, `permission_mode`
+- Verify all `.md` files are in `~/.grok/agents/`
+- Check frontmatter: each file must have `name`, `description`, `prompt_mode`, `model`, `permission_mode`. The `tools` key declares per-agent capabilities (least privilege).
 - Subagents must be enabled (they are by default). Check `~/.grok/config.toml` for `[subagents] enabled = false`
+- Do NOT expect an `agent` block in the global config with N entries — agent files in `~/.grok/agents/` are auto-discovered.
 
-### MAP fires too aggressively (cost concerns)
-Edit `~/.grok/AGENTS.md` and tighten the trivial-override threshold. See the "Override — ohne MAP" section.
+### Pipeline fires too aggressively (cost concerns)
+- Tighten the trivial-override threshold in `~/.grok/AGENTS.md` (see "Trivial-Override" above).
+- Use dynamic routing (see table above) instead of forcing the full 7-agent fleet on every task.
+
+### Duplicate `AGENTS.md` content after reinstall
+- You skipped the managed-block install (Step 3) and used `cat AGENTS.md >> ~/.grok/AGENTS.md`. Revert to the managed-block installer; it is idempotent.
 
 ## Uninstallation
 
@@ -136,7 +189,23 @@ rm -rf ~/.grok/plugins/fable-mythos-grok
 # Or remove manual installation
 rm -rf ~/.grok/skills/fable-mythos-modus
 rm ~/.grok/agents/mythos-*.md
-rm ~/.grok/AGENTS.md
+rm ~/.grok/agents/reliability-*.md
+
+# Remove the managed block from AGENTS.md (idempotent — leaves the rest intact)
+python3 - <<'PY'
+from pathlib import Path
+import re
+
+dst_path = Path.home() / ".grok" / "AGENTS.md"
+if not dst_path.exists():
+    raise SystemExit(0)
+text = dst_path.read_text(encoding="utf-8")
+START, END = "<!-- reliability-harness:start -->", "<!-- reliability-harness:end -->"
+pattern = re.compile(re.escape(START) + r".*?" + re.escape(END) + r"\n?", re.DOTALL)
+new = pattern.sub("", text).rstrip() + "\n"
+dst_path.write_text(new, encoding="utf-8")
+print(f"Removed managed block from {dst_path}.")
+PY
 
 # Reload plugins
 /plugins reload
@@ -152,6 +221,8 @@ No conflicts. You can run both on the same machine.
 
 ## Next Steps
 
-- Read [`docs/MYTHOS-SYSTEM-CARD-ANALYSIS.md`](./docs/MYTHOS-SYSTEM-CARD-ANALYSIS.md) for the evidence base
+- Read [`core/runtime-rules.md`](./core/runtime-rules.md) for the 14-point runtime core
+- Read [`core/task-contract.schema.json`](./core/task-contract.schema.json) for the task-contract schema
+- Read [`docs/RELIABILITY-ROADMAP.md`](./docs/RELIABILITY-ROADMAP.md) for the phase plan
+- Read [`docs/EMPIRICAL-BENCHMARK-PLAN.md`](./docs/EMPIRICAL-BENCHMARK-PLAN.md) for the validation plan
 - Read [`docs/ANTI-CONCEALMENT.md`](./docs/ANTI-CONCEALMENT.md) for the philosophy
-- Star the repo if it helps
