@@ -144,7 +144,7 @@ git clone https://github.com/emco1234/fable-mythos-grok.git ~/.grok/plugins/fabl
 /plugins reload
 ```
 
-> **Plugin bundles 11 agents + 11 matching `roles/*.toml` — both are required for the agents to appear in Grok's TUI subagent picker.** Each agent has `agents/<name>.md` (behavior) plus `roles/<name>.toml` (capability envelope). See [`INSTALLATION.md`](./INSTALLATION.md) for the full component layout and `grok inspect fable-mythos-grok` to verify.
+> **Grok Build beta status (honest):** In the current Grok Build beta (v0.2.x), third-party plugins **cannot** register custom selectable subagents in the TUI picker — only the built-ins (`general-purpose`, `explore`, `plan`) appear. What reliably shapes behavior here is the **`fable-mythos-modus` skill** + **`AGENTS.md`** (Evaluation Blindness, Auditability, Task Contract, self-verification, Done Gate). The 11 `agents/*.md` + matching `roles/*.toml` are shipped as a forward reference in the layout Grok uses for its own bundled agents, ready for when Grok documents third-party subagent support. See [`INSTALLATION.md`](./INSTALLATION.md).
 
 ### Option B — Manual Installation
 
