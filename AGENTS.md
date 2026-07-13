@@ -54,7 +54,13 @@ There is no "Evaluation-Awareness-Check", "Evaluation-Awareness-Einschätzung", 
 | `reliability-verifier` | yes | no | no | yes | yes | Clean-checkout verification only. |
 | `reliability-adversary` | yes | no | no | yes | yes | Critical-tier only; isolated worktree. |
 
-Capabilities are declared per-agent in each agent file's frontmatter (`tools` / `permission_mode`). `plugin.toml` no longer grants `default_capability_mode = "all"`.
+This matrix is the **conceptual least-privilege intent**. Grok Build CLI does **not** read it as a tool list; it approximates it through `permission_mode` named modes declared in each agent file's frontmatter:
+
+- `plan` (read-only) implements the read-only rows: `mythos-singleshot-thinking-intelligence`, `mythos-synthesizer`, `reliability-scout`, `reliability-spec-critic`.
+- `default` (full toolset) implements the full-write rows: `mythos-executor`, `reliability-lead`, `reliability-test-designer`.
+- `default` also covers the read+bash rows (`mythos-verifier`, `mythos-adversary`, `reliability-verifier`, `reliability-adversary`) — see the limitation in [`INSTALLATION.md`](./INSTALLATION.md): Grok has no read+exec-only mode, so the closest available mode (`default`) is used and the no-edit discipline is enforced by the system prompt.
+
+There is **no** `tools:` array in any frontmatter. `plugin.toml` does **not** grant `default_capability_mode = "all"`.
 
 ## Runtime Core (full text: `core/runtime-rules.md`)
 

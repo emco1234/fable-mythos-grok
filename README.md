@@ -48,7 +48,7 @@ This plugin brings a mythos-inspired reliability framework to xAI's Grok Build C
 
 - **Native sub-agents** — Grok spawns child sessions with separate context windows, useful for parallel investigation.
 - **Plugin system** — `~/.grok/plugins/` with `skills/`, `agents/`, `commands/`, `hooks/`.
-- **Frontmatter-based agent definitions** — clean `.md` files with `name`, `description`, `prompt_mode`, `model`, `permission_mode`, `tools`.
+- **Frontmatter-based agent definitions** — clean `.md` files with `name`, `description`, `prompt_mode`, `model`, `permission_mode`, `agents_md`. Tool access is governed by `permission_mode` (a Grok named mode), not by a per-agent `tools` list.
 - **`task` tool** — programmatic sub-agent invocation with `agent: <name>` parameter.
 
 ---

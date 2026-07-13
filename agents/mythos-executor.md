@@ -8,7 +8,6 @@ description: >
 prompt_mode: full
 model: inherit
 permission_mode: default
-tools: ["read", "edit", "write", "bash", "grep", "glob"]
 agents_md: true
 ---
 
