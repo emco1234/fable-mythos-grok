@@ -65,6 +65,8 @@ mkdir -p ~/.grok/agents
 cp agents/*.md ~/.grok/agents/
 ```
 
+**No manual agent creation needed.** Grok Build CLI **auto-discovers** every `.md` file in `~/.grok/agents/` from its frontmatter (`name`, `description`, `tools`, `permission_mode`). You do **not** need to create agents by hand in the TUI, and there is **no** `agent` block to register in any config file — the copy command above is the entire install. If a guide (older or third-party) tells you to create the 5 / 11 agents manually through the Grok UI, that is outdated: filesystem drop-in is the supported path.
+
 Each agent file declares its own capabilities in frontmatter (`tools` / `permission_mode`). There is **no** blanket `default_capability_mode = "all"` — least privilege is enforced per-agent. See the permission matrix in [`AGENTS.md`](./AGENTS.md).
 
 ### Step 3 — Install the Global Rules (idempotent)
