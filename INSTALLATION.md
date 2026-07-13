@@ -58,57 +58,84 @@ description: Reliability-first operating mode...
 ---
 ```
 
-### Step 2 — Install the Skill (the working control surface in Grok Build Beta)
+### Step 2 — Install the Skill, Agents, and Roles
+
+Grok Build CLI discovers three kinds of components from well-defined user-level directories. Install all three:
 
 ```bash
+# 2a. The skill (shapes main-agent behavior: Evaluation Blindness, Auditability, Task Contract, Done Gate)
 mkdir -p ~/.grok/skills/fable-mythos-modus
 cp -r skills/fable-mythos-modus/* ~/.grok/skills/fable-mythos-modus/
+
+# 2b. The 11 custom agents (these are what show up in the TUI subagent picker)
+mkdir -p ~/.grok/agents
+cp agents/*.md ~/.grok/agents/
+
+# 2c. The matching capability roles (capability_mode + reasoning_effort per agent)
+mkdir -p ~/.grok/roles
+cp roles/*.toml ~/.grok/roles/
 ```
 
-Grok Build CLI **auto-discovers** the skill from `~/.grok/skills/<name>/SKILL.md` (frontmatter `name` must match the directory name). After a Grok restart, `grok inspect` lists it under **Skills**. This is the part that actually shapes the main agent's behavior in the current Grok Build beta — the reliability rules (Task Contract, Evaluation Blindness, Auditability, self-verification, Done Gate) live in the skill body and in `AGENTS.md`, and they apply to every session.
+Per the official Grok Build docs (`~/.grok/docs/user-guide/16-subagents.md`):
 
-#### Important — honest status of custom subagents in Grok Build (v0.2.x beta)
+- **Agents** are auto-discovered from `.grok/agents/*.md` (project) and `~/.grok/agents/*.md` (user). Each `.md` file's frontmatter defines the agent; the filename (without `.md`) is the agent name. This is how the 11 agents become invokable subagent types alongside the built-ins (`general-purpose`, `explore`, `plan`).
+- **Roles** are auto-discovered from `.grok/roles/*.toml` and `~/.grok/roles/*.toml`. Each role defines `description`, `default_capability_mode`, and `reasoning_effort` for a named agent type.
+- **Skills** are auto-discovered from `~/.grok/skills/<name>/SKILL.md` (frontmatter `name` must match the directory name).
 
-Grok Build's **built-in** subagents — `general-purpose`, `explore`, `plan` — are what you get in the TUI subagent picker. They are bundled under `~/.grok/bundled/` (with an internal `manifest.json` + `agents/*.md` + `roles/*.toml` layout that is **not documented for third-party plugins**).
+#### Verify all 11 agents loaded
 
-This repository ships `agents/*.md` + matching `roles/*.toml` + a `plugin.toml` that declares them under `[plugin.components]`. In the **current Grok Build beta** these are **not yet surfaced as selectable subagents** in the TUI picker: `grok inspect` reports the plugin as enabled with "1 agents" rather than 11, and the official docs do not document a working mechanism for third-party plugins to register custom subagents. The `gsd-*` entries some users see in the picker originate from **skills with workflows**, not from plugin `agents/*.md` files — a different mechanism.
-
-What this means in practice for the current beta:
-
-- The **built-in** subagents (`general-purpose`, `explore`, `plan`) remain the invokable subagents.
-- The **`fable-mythos-modus` skill + `AGENTS.md`** (this is what loads reliably) govern how the main agent and those built-in subagents behave — Evaluation Blindness, Auditability, Task Contract, self-verification, Done Gate.
-- The 11 `agents/*.md` + `roles/*.toml` files are kept in the repo as a **forward reference**: they are structured exactly like Grok's bundled agents, so if/when Grok Build documents and ships third-party custom subagents, this plugin is already in the right shape and only needs the manifest wiring that the docs will specify.
-
-If a later Grok Build release adds documented third-party subagent support, update this section and remove the beta caveat.
-
-##### What you can verify today
+After a full Grok restart:
 
 ```bash
 grok inspect
 ```
 
-Under **Skills** you should see `fable-mythos-modus`. Under **Agents** you see Grok's built-ins (`general-purpose`, `explore`, `plan`). The reliability behavior is applied via the skill + `AGENTS.md`, not via custom subagent entries.
+Under **Agents** you should see all 11 (plus the built-ins and any other plugins' agents):
 
-Also confirm the plugin is enabled in `~/.grok/config.toml`:
-
-```toml
-[plugins]
-enabled = ["fable-mythos-grok", ...]
+```
+└ mythos-adversary                         user
+└ mythos-executor                          user
+└ mythos-singleshot-thinking-intelligence  user
+└ mythos-synthesizer                       user
+└ mythos-verifier                          user
+└ reliability-adversary                    user
+└ reliability-lead                         user
+└ reliability-scout                        user
+└ reliability-spec-critic                  user
+└ reliability-test-designer                user
+└ reliability-verifier                     user
 ```
 
-In most setups the auto-scan of `~/.grok/plugins/` discovers the plugin and adds the entry itself, but if `grok inspect` reports the plugin as disabled, add the name explicitly and reload.
+If any are missing, confirm the file is in `~/.grok/agents/` (NOT only in a plugin bundle — Grok loads user agents from `~/.grok/agents/`, which is the documented path).
+
+#### Agent frontmatter format (matches Grok's bundled agents)
+
+Each `agents/<name>.md` uses the same frontmatter schema as Grok's built-ins (`~/.grok/bundled/agents/*.md`):
+
+```yaml
+---
+name: <agent-name>
+description: >
+  <multiline description>
+prompt_mode: full
+model: inherit
+permission_mode: plan | default
+agents_md: true
+---
+<system prompt body>
+```
 
 #### How `permission_mode` maps to least-privilege intent
 
-Grok's named modes are the only mechanism that actually gates tool access. The agent files use:
+Grok controls tool access via named `permission_mode`s (not per-agent tool lists). The agent files use:
 
-| `permission_mode` | Tools available in Grok | Agents | Original least-privilege intent |
+| `permission_mode` | Tools available in Grok | Agents | Least-privilege intent |
 |---|---|---|---|
 | `plan` | read-only (read, grep, glob) + planning | `mythos-singleshot-thinking-intelligence`, `mythos-synthesizer`, `reliability-scout`, `reliability-spec-critic` | READ-ONLY — exact match |
 | `default` | full toolset (read, edit, write, bash, grep, glob) | `mythos-executor`, `reliability-lead`, `reliability-test-designer` | FULL write — exact match |
 | `default` | full toolset (see above) | `mythos-verifier`, `mythos-adversary`, `reliability-verifier`, `reliability-adversary` | intended read+bash-only (see limitation below) |
 
-**Known limitation (honest):** Grok Build CLI does **not** expose a read+exec-only mode. The four verifier/adversary agents conceptually need only `read` + `bash` (run tests/fuzzing in an isolated worktree), but the narrowest Grok mode that includes `bash` is `default`, which also grants edit/write. These agents are therefore pinned to `default` and disciplined by their system prompt to never edit main source. If Grok later adds a read+exec-only mode, these four agents should be moved to it; this is tracked as the closest available approximation.
+**Known limitation (honest):** Grok Build CLI's `spawn_subagent` exposes `capability_mode` values of `read-only` / `read-write` / `execute` / `all`, but the **`permission_mode` field in the agent file** only accepts Grok's named modes (`plan`, `default`). There is no `permission_mode` that maps to read+exec-only. The four verifier/adversary agents conceptually need `read` + `bash` only, but the narrowest named mode that includes bash is `default`. These agents are therefore pinned to `default` and disciplined by their system prompt to never edit main source. (At spawn time the orchestrator can additionally pass `capability_mode: execute` to restrict them further.)
 
 ### Step 3 — Install the Global Rules (idempotent)
 
@@ -216,18 +243,19 @@ An edit is **trivial** when it is logically obvious and touches no behavior, log
 - Subagents must be enabled (they are by default). Check `~/.grok/config.toml` for `[subagents] enabled = false`
 - Do NOT expect an `agent` block in the global config with N entries — agent files in `~/.grok/agents/` are auto-discovered.
 
-### Agents missing from the TUI subagent picker (plugin install)
+### Agents missing from the TUI subagent picker
 
-In the **current Grok Build beta (v0.2.x)**, third-party plugins **cannot** register custom selectable subagents in the TUI picker — the official docs do not document a working mechanism for it. Only Grok's **built-in** subagents (`general-purpose`, `explore`, `plan`) appear in the picker. This is a documented beta limitation, not a configuration error in your install.
+Grok Build CLI discovers user agents from **`~/.grok/agents/*.md`** and roles from **`~/.grok/roles/*.toml`** (per the official `~/.grok/docs/user-guide/16-subagents.md`). The most common cause of missing agents is that the `.md` files live only inside the plugin bundle (`~/.grok/plugins/.../agents/`) but **not** in `~/.grok/agents/`. The plugin bundle path is not a documented auto-discovery location for user agents.
 
-What still works and is what you should rely on:
-- The **`fable-mythos-modus` skill** loads and shapes main-agent + built-in-subagent behavior (Evaluation Blindness, Auditability, Task Contract, self-verification, Done Gate). Verify with `grok inspect` → the skill appears under **Skills**.
-- The **`AGENTS.md`** global rules apply to every session.
-- The built-in subagents `general-purpose`, `explore`, `plan` remain available for delegation.
+Fix:
+- Copy the agent files: `cp agents/*.md ~/.grok/agents/`
+- Copy the role files:  `cp roles/*.toml ~/.grok/roles/`
+- Fully restart Grok and run `grok inspect`. All 11 agents should appear under **Agents** as `user`.
 
-The `agents/*.md` + `roles/*.toml` files shipped here are kept as a **forward reference** in the layout Grok uses for its own bundled agents. If a future Grok Build release documents third-party custom subagents, this plugin is already structured to match and will only need the manifest wiring the docs specify.
-
-Do **not** spend time trying to make the 11 custom agents appear in the picker in the current beta — it is not supported.
+Other checks if still missing:
+- The frontmatter must start with `---`, have `name:` matching the filename (without `.md`), and use `permission_mode: plan | default` (NOT a `tools:` array — that is not a Grok field).
+- File must be UTF-8 (umlauts display correctly); avoid a UTF-8 BOM.
+- Confirm with `grok inspect` — it lists every loaded agent and its source (`builtin`, `user`, or `plugin: <name>`).
 
 ### Pipeline fires too aggressively (cost concerns)
 - Tighten the trivial-override threshold in `~/.grok/AGENTS.md` (see "Trivial-Override" above).
