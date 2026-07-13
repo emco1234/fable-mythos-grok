@@ -1,0 +1,3 @@
+description = "Primary artifact generator in the reliability harness (Phase 1). Receives thinking passes from Phase 0, selects/combines the strongest, builds the actual artifact, and self-verifies before handoff."
+default_capability_mode = "full"
+reasoning_effort = "high"

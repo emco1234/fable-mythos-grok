@@ -1,0 +1,3 @@
+description = "Red-team agent for critical risk tier only. Actively tries to break the patch via fuzzing, race conditions, security risks, injection, and abuse scenarios in an isolated worktree."
+default_capability_mode = "read-only"
+reasoning_effort = "high"

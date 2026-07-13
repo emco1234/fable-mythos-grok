@@ -1,0 +1,3 @@
+description = "Aggregation agent in the reliability harness (Phase 3). Aggregates executor + verifier + adversary outputs, resolves contradictions, and emits a final status without producing artifacts."
+default_capability_mode = "read-only"
+reasoning_effort = "high"

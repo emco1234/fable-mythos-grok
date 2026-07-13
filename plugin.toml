@@ -50,6 +50,22 @@ agents = [
   "agents/reliability-verifier.md",
   "agents/reliability-adversary.md"
 ]
+# Required: matching roles/<name>.toml for each agent. Grok Build CLI only
+# registers a custom agent as selectable in the TUI subagent picker when a
+# roles/<name>.toml capability envelope exists next to agents/<name>.md.
+roles = [
+  "roles/mythos-singleshot-thinking-intelligence.toml",
+  "roles/mythos-executor.toml",
+  "roles/mythos-verifier.toml",
+  "roles/mythos-adversary.toml",
+  "roles/mythos-synthesizer.toml",
+  "roles/reliability-scout.toml",
+  "roles/reliability-spec-critic.toml",
+  "roles/reliability-test-designer.toml",
+  "roles/reliability-lead.toml",
+  "roles/reliability-verifier.toml",
+  "roles/reliability-adversary.toml"
+]
 
 [plugin.permissions]
 # No default_capability_mode = "all" (removed in v2.0.0, P0.3).

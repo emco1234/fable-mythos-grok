@@ -144,6 +144,8 @@ git clone https://github.com/emco1234/fable-mythos-grok.git ~/.grok/plugins/fabl
 /plugins reload
 ```
 
+> **Plugin bundles 11 agents + 11 matching `roles/*.toml` — both are required for the agents to appear in Grok's TUI subagent picker.** Each agent has `agents/<name>.md` (behavior) plus `roles/<name>.toml` (capability envelope). See [`INSTALLATION.md`](./INSTALLATION.md) for the full component layout and `grok inspect fable-mythos-grok` to verify.
+
 ### Option B — Manual Installation
 
 ```bash
