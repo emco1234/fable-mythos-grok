@@ -4,7 +4,7 @@
   "title": "Verification Report",
   "description": "Structured report emitted by the verifier (and rolled up by the synthesizer). Replaces uncalibrated 'X% sure' with a status enum and concrete evidence.",
   "type": "object",
-  "required": ["task_id", "status", "acceptance_results", "scope_violations", "evidence"],
+  "required": ["task_id", "status", "acceptance_results", "scope_violations", "evidence", "worktree"],
   "additionalProperties": false,
   "properties": {
     "task_id": {
@@ -128,6 +128,28 @@
     "forced_by_gate": {
       "type": "string",
       "description": "If status != VERIFIED, the machine gate or finding that forced it (e.g., 'test_auth.py::test_race FAILED on clean checkout')."
+    },
+    "worktree": {
+      "type": "object",
+      "description": "Identifies the clean checkout the verifier ran on. Required so a report cannot validate without machine-checkable proof that verification happened on a fresh worktree (not the executor's dirty tree).",
+      "required": ["base_commit", "patch_applied", "fresh_checkout"],
+      "additionalProperties": false,
+      "properties": {
+        "base_commit": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The git commit the fresh worktree was created from (matches task-contract.base_commit)."
+        },
+        "patch_applied": {
+          "type": "boolean",
+          "description": "True if the frozen patch was applied to the fresh worktree before running checks."
+        },
+        "fresh_checkout": {
+          "type": "boolean",
+          "description": "True only if the worktree was newly created for this verification. If false or absent, VERIFIED is unreachable.",
+          "const": true
+        }
+      }
     }
   }
 }
