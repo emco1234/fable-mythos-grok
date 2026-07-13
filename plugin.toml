@@ -3,8 +3,13 @@
 #
 # Least-privilege policy (P0.3):
 #   There is NO `default_capability_mode = "all"`. Each agent declares its own
-#   capabilities via frontmatter (`tools` / `permission_mode`) in its agent file.
-#   The matrix below documents the intended permission envelope per agent.
+#   capabilities via the frontmatter `permission_mode` field in its agent file
+#   (a Grok named mode such as `plan` or `default`). There is NO `tools:` array
+#   in the frontmatter — Grok controls tool access via `permission_mode` only.
+#   The matrix below documents the intended permission envelope per agent; Grok
+#   approximates it through named modes (plan = read-only rows, default = the
+#   others). See INSTALLATION.md for the read+exec-only limitation on
+#   verifier/adversary agents.
 #   If Grok Build CLI gains TOML-level per-agent capability keys in the future,
 #   this table should be mirrored into structured TOML.
 #

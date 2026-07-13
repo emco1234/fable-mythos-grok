@@ -8,7 +8,6 @@ description: >
 prompt_mode: full
 model: inherit
 permission_mode: plan
-tools: ["read", "grep", "glob"]
 agents_md: true
 ---
 

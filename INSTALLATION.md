@@ -65,9 +65,21 @@ mkdir -p ~/.grok/agents
 cp agents/*.md ~/.grok/agents/
 ```
 
-**No manual agent creation needed.** Grok Build CLI **auto-discovers** every `.md` file in `~/.grok/agents/` from its frontmatter (`name`, `description`, `tools`, `permission_mode`). You do **not** need to create agents by hand in the TUI, and there is **no** `agent` block to register in any config file — the copy command above is the entire install. If a guide (older or third-party) tells you to create the 5 / 11 agents manually through the Grok UI, that is outdated: filesystem drop-in is the supported path.
+**No manual agent creation needed.** Grok Build CLI **auto-discovers** every `.md` file in `~/.grok/agents/` from its frontmatter (`name`, `description`, `prompt_mode`, `model`, `permission_mode`, `agents_md`). You do **not** need to create agents by hand in the TUI, and there is **no** `agent` block to register in any config file — the copy command above is the entire install. If a guide (older or third-party) tells you to create the 5 / 11 agents manually through the Grok UI, that is outdated: filesystem drop-in is the supported path.
 
-Each agent file declares its own capabilities in frontmatter (`tools` / `permission_mode`). There is **no** blanket `default_capability_mode = "all"` — least privilege is enforced per-agent. See the permission matrix in [`AGENTS.md`](./AGENTS.md).
+Each agent file declares its capabilities in frontmatter via the **`permission_mode`** field, which names a Grok-managed mode. Grok Build CLI controls tool access through these named modes — **not** through a per-agent tool list. There is **no** `tools:` array in the frontmatter and **no** blanket `default_capability_mode = "all"`. See the permission matrix in [`AGENTS.md`](./AGENTS.md).
+
+#### How `permission_mode` maps to least-privilege intent
+
+Grok's named modes are the only mechanism that actually gates tool access. The agent files use:
+
+| `permission_mode` | Tools available in Grok | Agents | Original least-privilege intent |
+|---|---|---|---|
+| `plan` | read-only (read, grep, glob) + planning | `mythos-singleshot-thinking-intelligence`, `mythos-synthesizer`, `reliability-scout`, `reliability-spec-critic` | READ-ONLY — exact match |
+| `default` | full toolset (read, edit, write, bash, grep, glob) | `mythos-executor`, `reliability-lead`, `reliability-test-designer` | FULL write — exact match |
+| `default` | full toolset (see above) | `mythos-verifier`, `mythos-adversary`, `reliability-verifier`, `reliability-adversary` | intended read+bash-only (see limitation below) |
+
+**Known limitation (honest):** Grok Build CLI does **not** expose a read+exec-only mode. The four verifier/adversary agents conceptually need only `read` + `bash` (run tests/fuzzing in an isolated worktree), but the narrowest Grok mode that includes `bash` is `default`, which also grants edit/write. These agents are therefore pinned to `default` and disciplined by their system prompt to never edit main source. If Grok later adds a read+exec-only mode, these four agents should be moved to it; this is tracked as the closest available approximation.
 
 ### Step 3 — Install the Global Rules (idempotent)
 
@@ -171,7 +183,7 @@ An edit is **trivial** when it is logically obvious and touches no behavior, log
 
 ### Sub-agents not invokable
 - Verify all `.md` files are in `~/.grok/agents/`
-- Check frontmatter: each file must have `name`, `description`, `prompt_mode`, `model`, `permission_mode`. The `tools` key declares per-agent capabilities (least privilege).
+- Check frontmatter: each file must have `name`, `description`, `prompt_mode`, `model`, `permission_mode`, `agents_md`. Tool access is governed by `permission_mode` (a Grok named mode such as `plan` or `default`), **not** by a `tools` array — a `tools:` key in the frontmatter is not a Grok-supported field and should be removed.
 - Subagents must be enabled (they are by default). Check `~/.grok/config.toml` for `[subagents] enabled = false`
 - Do NOT expect an `agent` block in the global config with N entries — agent files in `~/.grok/agents/` are auto-discovered.
 
