@@ -310,3 +310,15 @@ No conflicts. You can run both on the same machine.
 - Read [`docs/RELIABILITY-ROADMAP.md`](./docs/RELIABILITY-ROADMAP.md) for the phase plan
 - Read [`docs/EMPIRICAL-BENCHMARK-PLAN.md`](./docs/EMPIRICAL-BENCHMARK-PLAN.md) for the validation plan
 - Read [`docs/ANTI-CONCEALMENT.md`](./docs/ANTI-CONCEALMENT.md) for the philosophy
+
+---
+
+## FORCE MAP and tool-call hygiene (after install)
+
+The installed `AGENTS.md` includes:
+
+1. **FORCE MAP Override** — phrases like `feuer den map mode` / `MAP Mode` / `full MAP` force a full autonomous MAP fleet using the **bare** registered agent names (not `0-mythos-…` filenames).
+2. **Tool-Call Hygiene** — raw tool args only (no `</target_id>` leaks), no `task-notification` spam after streaming-recovery failures, wait via filesystem backoff.
+
+If MAP does not fire on a force phrase, re-merge `AGENTS.md` from this repo and restart the CLI/TUI.
+
